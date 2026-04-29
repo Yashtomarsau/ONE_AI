@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>OneAI – Gateway</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    /* New background styles */
+    body {
+      margin: 0;
+      font-family: 'Outfit', sans-serif;
+      color: white;
+      overflow-x: hidden;
+      background: #111;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 200%;
+      width: 100%;
+      background: url("https://images.unsplash.com/photo-1465146633011-14f8e0781093?ixlib=rb-1.2.1&auto=format&fit=crop&w=3450&q=80") repeat;
+      background-size: cover;
+      animation: scroll 100s linear infinite;
+      z-index: -2;
+      opacity: 0.3;
+    }
+
+    .shape {
+      position: fixed;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.07), transparent 70%);
+      filter: blur(30px);
+      animation: drift 20s ease-in-out infinite alternate;
+      z-index: -1;
+    }
+
+    .shape.one {
+      width: 200px;
+      height: 200px;
+      top: 15%;
+      left: 10%;
+    }
+
+    .shape.two {
+      width: 300px;
+      height: 300px;
+      bottom: 10%;
+      right: 15%;
+      animation-delay: 3s;
+    }
+
+    .grid {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 60px 60px;
+      z-index: -1;
+    }
+
+    @keyframes scroll {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-50%); }
+    }
+
+    @keyframes drift {
+      from { transform: translateY(0px) rotate(0deg); }
+      to { transform: translateY(-40px) rotate(20deg); }
+    }
+
+    /* Original styles with slight adjustments for new background */
+    .page {
+      display: none;
+      height: 100vh;
+      width: 100%;
+      position: relative;
+    }
+
+    .page.active {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    /* Page 1 Styles */
+    #page1 h1 {
+      font-size: 3em;
+      margin-bottom: 20px;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }
+
+    .search-container {
+      margin: 1rem auto;
+      width: 80%;
+      max-width: 600px;
+      position: relative;
+    }
+
+    #mainSearchInput {
+      width: 100%;
+      padding: 0.8rem 1.2rem;
+      border-radius: 25px;
+      border: none;
+      background: rgba(26, 26, 26, 0.8);
+      color: white;
+      font-size: 1rem;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    #mainSearchButton {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: #4c00ff;
+      color: white;
+      border: none;
+      border-radius: 20px;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      transition: 0.3s;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    #mainSearchButton:hover {
+      background: #7200ff;
+    }
+
+    /* Page 2 Styles */
+    #page2 {
+      align-items: stretch;
+      padding-bottom: 2rem;
+      overflow-y: auto;
+    }
+
+    .navbar {
+      background: rgba(22, 27, 34, 0.9);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .back-btn {
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.9rem;
+    }
+
+    .results-container {
+      width: 80%;
+      max-width: 800px;
+      margin: 2rem auto;
+    }
+
+    .tool-result {
+      background: rgba(22, 27, 34, 0.9);
+      border-radius: 10px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      text-align: left;
+      transition: transform 0.3s;
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .tool-result:hover {
+      transform: translateX(5px);
+      background: rgba(31, 41, 55, 0.9);
+    }
+
+    .tool-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .tool-name {
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: #a98df0;
+    }
+
+    .tool-category {
+      font-size: 0.8rem;
+      background: rgba(169, 141, 240, 0.2);
+      padding: 0.2rem 0.5rem;
+      border-radius: 10px;
+    }
+
+    .tool-usp {
+      margin-bottom: 0.5rem;
+    }
+
+    .tool-relevance {
+      font-size: 0.8rem;
+      color: #aaa;
+      display: flex;
+      align-items: center;
+    }
+
+    .relevance-bar {
+      height: 5px;
+      background: #30363d;
+      border-radius: 5px;
+      margin-left: 0.5rem;
+      flex-grow: 1;
+    }
+
+    .relevance-fill {
+      height: 100%;
+      border-radius: 5px;
+      background: linear-gradient(to right, #4c00ff, #a98df0);
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 2rem;
+      color: #aaa;
+      background: rgba(22, 27, 34, 0.7);
+      border-radius: 10px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .search-examples {
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      color: #ddd;
+    }
+
+    .example-query {
+      display: inline-block;
+      margin: 0.3rem;
+      padding: 0.3rem 0.6rem;
+      background: rgba(169, 141, 240, 0.2);
+      border-radius: 15px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .example-query:hover {
+      background: rgba(169, 141, 240, 0.4);
+    }
+  </style>
+</head>
+<body>
+  <!-- Background elements -->
+  <div class="shape one"></div>
+  <div class="shape two"></div>
+  <div class="grid"></div>
+
+  <!-- Page 1 - Main Search -->
+  <div class="page active" id="page1">
+    <h1>OneAI – Your Gateway to the Right AI</h1>
+    <div class="search-container">
+      <input type="text" id="mainSearchInput" placeholder="How may i help you today?">
+      <button id="mainSearchButton" onclick="searchTools()">Find AI Tools</button>
+    </div>
+    <div class="search-examples">
+      Try: <span class="example-query" onclick="fillExample('remove backgrounds from photos')">Remove backgrounds</span>
+      <span class="example-query" onclick="fillExample('help with writing blog posts')">Blog writing</span>
+      <span class="example-query" onclick="fillExample('generate code from description')">Code generation</span>
+    </div>
+  </div>
+
+  <!-- Page 2 - Results -->
+  <div class="page" id="page2">
+    <div class="navbar">
+      <button class="back-btn" onclick="showPage1()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        New Search
+      </button>
+      <div><strong>AI Tools Matching Your Needs</strong></div>
+    </div>
+
+    <div class="results-container" id="resultsContainer">
+      <!-- Results will be added dynamically -->
+    </div>
+  </div>
+
+  <script>
+    // AI Tools Data with official URLs
+    const aiTools = [
+      // Writing & Content Creation
+      { name: "ChatGPT", category: "Writing & Content Creation", usp: "Conversational AI for writing, coding, and brainstorming", 
+        keywords: ["write", "content", "essay","blog", "article", "text", "copy", "brainstorm", "ideas", "chat", "assistant", "generate"], 
+        url: "https://chat.openai.com" },
+      { name: "Jasper AI", category: "Writing & Content Creation", usp: "AI content generator specialized in marketing & SEO copy", 
+        keywords: ["marketing", "seo", "ad copy", "sales", "promotional", "ads", "copywriting", "brand", "commerce"], 
+        url: "https://www.jasper.ai" },
+      { name: "Writesonic", category: "Writing & Content Creation", usp: "AI blog/article writer with 25+ languages supported", 
+        keywords: ["blog", "article", "multilingual", "languages", "translate", "posts", "long-form"], 
+        url: "https://writesonic.com" },
+      { name: "Copy.ai", category: "Writing & Content Creation", usp: "Quick ad copy and sales text generator for marketers", 
+        keywords: ["ad", "sales", "marketing", "promotional", "ecommerce", "product", "description"], 
+        url: "https://www.copy.ai" },
+      
+      // Image Generation & Editing
+      { name: "MidJourney", category: "Image Generation & Editing", usp: "High-quality, stylized AI art via Discord", 
+        keywords: ["art", "image", "generate", "create", "picture", "visual", "design", "illustration", "concept", "digital"], 
+        url: "https://www.midjourney.com" },
+      { name: "DALL-E 3", category: "Image Generation & Editing", usp: "Realistic AI image generation from text prompts", 
+        keywords: ["realistic", "photo", "image", "generate", "create", "photorealistic", "visuals"], 
+        url: "https://openai.com/dall-e" },
+      { name: "Leonardo AI", category: "Image Generation & Editing", usp: "Game assets & design-focused image generation", 
+        keywords: ["game", "assets", "design", "characters", "textures", "3d", "concept", "art"], 
+        url: "https://leonardo.ai" },
+      { name: "Remove.bg", category: "Image Generation & Editing", usp: "One-click background remover for photos", 
+        keywords: ["background", "remove", "transparent", "photo", "image", "edit", "product", "isolate"], 
+        url: "https://www.remove.bg" },
+      { name: "Cleanup.pictures", category: "Image Generation & Editing", usp: "Easily remove unwanted objects from images", 
+        keywords: ["remove", "objects", "clean", "photo", "edit", "retouch", "erase", "unwanted"], 
+        url: "https://cleanup.pictures" },
+      
+      // Video & Animation
+      { name: "Pictory", category: "Video & Animation", usp: "Turn blogs and scripts into short videos", 
+        keywords: ["video", "create", "blog", "script", "short", "social", "media", "marketing"], 
+        url: "https://pictory.ai" },
+      { name: "Runway ML", category: "Video & Animation", usp: "AI-powered video editing, motion tracking, and effects", 
+        keywords: ["edit", "video", "effects", "motion", "tracking", "green", "screen", "vfx"], 
+        url: "https://runwayml.com" },
+      { name: "Synthesis", category: "Video & Animation", usp: "Create AI avatar videos from just text", 
+        keywords: ["avatar", "video", "text", "create", "presenter", "talking", "head"], 
+        url: "https://www.synthesis.com" },
+      { name: "HeyGen", category: "Video & Animation", usp: "Talking AI avatars for business and explainer videos", 
+        keywords: ["avatar", "talking", "explainer", "business", "presentation", "marketing", "training"], 
+        url: "https://www.heygen.com" },
+      
+      // Voice & Audio
+      { name: "ElevenLabs", category: "Voice & Audio", usp: "Realistic voice cloning with emotion control", 
+        keywords: ["voice", "clone", "audio", "emotion", "realistic", "text-to-speech", "tts", "narration"], 
+        url: "https://elevenlabs.io" },
+      { name: "Murf.ai", category: "Voice & Audio", usp: "AI voiceovers with studio-quality output", 
+        keywords: ["voiceover", "audio", "narration", "studio", "professional", "commercial", "video"], 
+        url: "https://murf.ai" },
+      { name: "Voicemod", category: "Voice & Audio", usp: "Real-time voice changer and effects", 
+        keywords: ["voice", "change", "effects", "real-time", "modify", "stream", "gaming", "fun"], 
+        url: "https://www.voicemod.net" },
+      { name: "LALAL.AI", category: "Voice & Audio", usp: "Music source separation (vocals vs instruments)", 
+        keywords: ["music", "separate", "vocals", "instruments", "audio", "extract", "karaoke", "stems"], 
+        url: "https://www.lalal.ai" },
+      
+      // Coding & Dev Tools
+      { name: "GitHub Copilot", category: "Coding & Dev Tools", usp: "Code completion powered by OpenAI models", 
+        keywords: ["code", "programming", "complete", "suggest", "developer", "autocomplete", "ide", "assistant"], 
+        url: "https://github.com/features/copilot" },
+      { name: "Replit Ghostwriter", category: "Coding & Dev Tools", usp: "Code generation in-browser, built for devs", 
+        keywords: ["code", "generate", "browser", "developer", "online", "ide", "collaborative"], 
+        url: "https://replit.com/site/ghostwriter" },
+      { name: "Cody by Sourcegraph", category: "Coding & Dev Tools", usp: "AI dev assistant for large codebases", 
+        keywords: ["code", "assistant", "large", "codebase", "search", "understand", "documentation"], 
+        url: "https://about.sourcegraph.com/cody" },
+      { name: "Codeium", category: "Coding & Dev Tools", usp: "Free autocomplete tool with fast performance", 
+        keywords: ["code", "autocomplete", "free", "fast", "suggestions", "programming", "developer"], 
+        url: "https://codeium.com" },
+      
+      // Productivity & Assistants
+      { name: "Notion AI", category: "Productivity & Assistants", usp: "Smart note-taking, summarizing & planning assistant", 
+        keywords: ["notes", "summarize", "plan", "organize", "productivity", "tasks", "database", "wiki"], 
+        url: "https://www.notion.so/product/ai" },
+      { name: "Taskade AI", category: "Productivity & Assistants", usp: "Brainstorming, outlining & organizing projects", 
+        keywords: ["brainstorm", "organize", "projects", "tasks", "mindmap", "workflow", "team", "collaboration"], 
+        url: "https://www.taskade.com/ai" },
+      { name: "Tome", category: "Productivity & Assistants", usp: "AI presentation creator from brief prompts", 
+        keywords: ["presentation", "slides", "create", "brief", "pitch", "deck", "storytelling"], 
+        url: "https://tome.app" },
+      { name: "Gamma.app", category: "Productivity & Assistants", usp: "Create modern, AI-generated slide decks", 
+        keywords: ["slides", "deck", "presentation","ppt", "modern", "design", "content", "visual"], 
+        url: "https://gamma.app" },
+      
+      // Chatbots & Agents
+      { name: "Character AI", category: "Chatbots & Agents", usp: "Talk to AI personas with custom behavior", 
+        keywords: ["chat", "persona", "character", "talk", "roleplay", "conversation", "simulation"], 
+        url: "https://beta.character.ai" },
+      { name: "Perplexity AI", category: "Chatbots & Agents", usp: "AI-powered search engine with citations", 
+        keywords: ["search", "answers", "research", "citations", "information", "accurate", "sources"], 
+        url: "https://www.perplexity.ai" },
+      { name: "Pi (by Inflection AI)", category: "Chatbots & Agents", usp: "Empathetic personal AI companion", 
+        keywords: ["companion", "talk", "personal", "empathetic", "support", "emotional", "friend"], 
+        url: "https://pi.ai" },
+      { name: "Claude AI (Anthropic)", category: "Chatbots & Agents", usp: "Helpful assistant with focus on safety & alignment", 
+        keywords: ["assistant", "safe", "helpful", "alignment", "ethical", "conversation", "chat"], 
+        url: "https://claude.ai" },
+      
+      // Data Analysis & Automation
+      { name: "MonkeyLearn", category: "Data Analysis & Automation", usp: "No-code text analysis (sentiment, classification, etc.)", 
+        keywords: ["analyze", "text", "sentiment", "no-code", "feedback", "reviews", "survey", "extract"], 
+        url: "https://monkeylearn.com" },
+      { name: "Obviously.AI", category: "Data Analysis & Automation", usp: "Predictive analytics without coding", 
+        keywords: ["predict", "analytics", "no-code", "data", "trends", "forecast", "business"], 
+        url: "https://www.obviously.ai" },
+      { name: "ChatGPT Code Interpreter / Advanced Data Analysis (ADA)", category: "Data Analysis & Automation", usp: "Analyze CSVs, do math, and generate plots", 
+        keywords: ["data", "analyze", "csv", "math", "plots", "excel", "spreadsheet", "visualization"], 
+        url: "https://chat.openai.com" },
+      { name: "Power BI + AI Insights", category: "Data Analysis & Automation", usp: "AI-driven data visualizations in business dashboards", 
+        keywords: ["visualize", "data", "business", "dashboard", "reports", "analytics", "insights"], 
+        url: "https://powerbi.microsoft.com" },
+      
+      // Document & PDF AI
+      { name: "Humata.ai", category: "Document & PDF AI", usp: "Ask questions and summarize PDFs instantly", 
+        keywords: ["pdf", "document", "summarize", "questions", "research", "paper", "legal", "contract"], 
+        url: "https://www.humata.ai" },
+      { name: "DocGPT", category: "Document & PDF AI", usp: "Interact with your documents like chatting with an expert", 
+        keywords: ["document", "chat", "expert", "ask", "contract", "legal", "analyze"], 
+        url: "https://docgpt.io" },
+      { name: "PDF.ai", category: "Document & PDF AI", usp: "Conversational interface for reading large PDFs", 
+        keywords: ["pdf", "large", "read", "conversation", "research", "paper", "book"], 
+        url: "https://pdf.ai" },
+      { name: "ChatDOC", category: "Document & PDF AI", usp: "Extracts tables, data, and answers questions from files", 
+        keywords: ["pdf", "tables", "extract", "data", "excel", "spreadsheet", "research"], 
+        url: "https://chatdoc.com" },
+      
+      // Education & Learning
+      { name: "Khanmigo (Khan Academy)", category: "Education & Learning", usp: "AI tutor for students with ethical boundaries", 
+        keywords: ["learn", "tutor", "education", "student", "homework", "math", "science", "history"], 
+        url: "https://www.khanacademy.org/khan-labs" },
+      { name: "Socratic by Google", category: "Education & Learning", usp: "Homework help via photo + explanation", 
+        keywords: ["homework", "help", "photo", "explain", "math", "science", "student", "learn"], 
+        url: "https://socratic.org" },
+      { name: "Quizgecko", category: "Education & Learning", usp: "Auto-generate quizzes from any content", 
+        keywords: ["quiz", "generate", "test", "questions", "education", "teacher", "study"], 
+        url: "https://quizgecko.com" },
+      { name: "TeachAnything", category: "Education & Learning", usp: "Explains any topic in simple terms", 
+        keywords: ["explain", "simple", "teach", "topic", "learn", "concepts", "education"], 
+        url: "https://www.teachanything.com" },
+      
+      // eCommerce & Business
+      { name: "Octane AI", category: "eCommerce & Business", usp: "Personalized product quizzes for Shopify stores", 
+        keywords: ["shopify", "ecommerce", "product", "quiz", "personalized", "recommendations", "store"], 
+        url: "https://octaneai.com" },
+      { name: "CopyMonkey", category: "eCommerce & Business", usp: "Auto-write Amazon listings with SEO", 
+        keywords: ["amazon", "listing", "seo", "product", "ecommerce", "seller", "marketplace"], 
+        url: "https://copymonkey.ai" },
+      { name: "Descript", category: "eCommerce & Business", usp: "All-in-one podcast, audio, and video editor", 
+        keywords: ["podcast", "edit", "audio", "video", "transcription", "screen", "recording"], 
+        url: "https://www.descript.com" },
+      { name: "Tidio AI", category: "eCommerce & Business", usp: "Smart AI chatbot to boost sales and support", 
+        keywords: ["chatbot", "sales", "support", "ecommerce", "live", "chat", "customer"], 
+        url: "https://www.tidio.com/ai-chatbot/" },
+      
+      // Fun, Social & Creativity
+      { name: "MyHeritage AI Time Machine", category: "Fun, Social & Creativity", usp: "Turns your selfies into historical portraits", 
+        keywords: ["photo", "selfie", "historical", "portrait", "fun", "family", "ancestry"], 
+        url: "https://www.myheritage.com/ai-time-machine" },
+      { name: "Deep Nostalgia", category: "Fun, Social & Creativity", usp: "Animate old photos (make ancestors blink/smile)", 
+        keywords: ["photo", "animate", "old", "family", "nostalgia", "relive", "memories"], 
+        url: "https://www.myheritage.com/deep-nostalgia" },
+      { name: "AI Dungeon", category: "Fun, Social & Creativity", usp: "Infinite choose-your-own-adventure games", 
+        keywords: ["game", "adventure", "story", "text", "roleplay", "fantasy", "creative"], 
+        url: "https://aidungeon.io" },
+      { name: "Booth.ai", category: "Fun, Social & Creativity", usp: "Create product photos from a single prompt", 
+        keywords: ["product", "photo", "generate", "create", "ecommerce", "catalog", "commercial"], 
+        url: "https://booth.ai" },
+      
+      // Utility & Miscellaneous
+      { name: "Browse AI", category: "Utility & Miscellaneous", usp: "Scrape & monitor websites without code", 
+        keywords: ["scrape", "monitor", "website", "data", "extract", "track", "automation"], 
+        url: "https://www.browse.ai" },
+      { name: "PromptHero", category: "Utility & Miscellaneous", usp: "Prompt search engine across AI tools", 
+        keywords: ["prompt", "search", "engine", "ideas", "inspiration", "generate", "ai"], 
+        url: "https://prompthero.com" },
+      { name: "Blackbox AI", category: "Utility & Miscellaneous", usp: "AI search & code suggestion in your IDE", 
+        keywords: ["code", "search", "ide", "suggest", "developer", "programming", "autocomplete"], 
+        url: "https://www.blackbox.ai" },
+      { name: "Durable.co", category: "Utility & Miscellaneous", usp: "One-click AI website builder for freelancers", 
+        keywords: ["website", "build", "create", "freelancer", "business", "landing", "page"], 
+        url: "https://durable.co" }
+    ];
+
+    // Simple NLP scoring function
+    function calculateRelevanceScore(tool, query) {
+      query = query.toLowerCase();
+      let score = 0;
+      
+      // Check if query contains tool name
+      if (query.includes(tool.name.toLowerCase())) {
+        score += 30;
+      }
+      
+      // Check category match
+      if (query.includes(tool.category.toLowerCase().split(' ')[0])) {
+        score += 20;
+      }
+      
+      // Check USP match
+      if (tool.usp.toLowerCase().includes(query)) {
+        score += 25;
+      }
+      
+      // Check keyword matches
+      tool.keywords.forEach(keyword => {
+        if (query.includes(keyword)) {
+          score += 10;
+        }
+      });
+      
+      // Special boosts for common phrases
+      if (query.includes("image") && tool.category.includes("Image")) {
+        score += 15;
+      }
+      if (query.includes("write") && tool.category.includes("Writing")) {
+        score += 15;
+      }
+      if (query.includes("code") && tool.category.includes("Coding")) {
+        score += 15;
+      }
+      if (query.includes("video") && tool.category.includes("Video")) {
+        score += 15;
+      }
+      
+      return score;
+    }
+
+    function showPage1() {
+      document.getElementById('page2').classList.remove('active');
+      document.getElementById('page1').classList.add('active');
+      document.getElementById('resultsContainer').innerHTML = '';
+      document.getElementById('mainSearchInput').value = '';
+    }
+
+    function showPage2() {
+      document.getElementById('page1').classList.remove('active');
+      document.getElementById('page2').classList.add('active');
+    }
+
+    function fillExample(query) {
+      document.getElementById('mainSearchInput').value = query;
+    }
+
+    function searchTools() {
+      const query = document.getElementById('mainSearchInput').value.trim();
+      
+      if (!query) {
+        alert("Please enter what you're looking for");
+        return;
+      }
+      
+      // Calculate relevance scores for all tools
+      const scoredTools = aiTools.map(tool => {
+        return {
+          ...tool,
+          relevance: calculateRelevanceScore(tool, query)
+        };
+      }).filter(tool => tool.relevance > 0);
+      
+      // Sort by relevance (highest first)
+      scoredTools.sort((a, b) => b.relevance - a.relevance);
+      
+      // Show results page
+      showPage2();
+      
+      // Display results
+      const resultsContainer = document.getElementById('resultsContainer');
+      
+      if (scoredTools.length === 0) {
+        resultsContainer.innerHTML = `
+          <div class="no-results">
+            No tools found for "${query}". Try different keywords like:<br>
+            <span class="example-query" onclick="fillExample('image generation')">image generation</span>
+            <span class="example-query" onclick="fillExample('writing assistant')">writing assistant</span>
+            <span class="example-query" onclick="fillExample('video editing')">video editing</span>
+          </div>
+        `;
+        return;
+      }
+      
+      resultsContainer.innerHTML = '';
+      scoredTools.forEach(tool => {
+        const relevancePercent = Math.min(100, Math.round(tool.relevance));
+        
+        const toolElement = document.createElement('div');
+        toolElement.className = 'tool-result';
+        toolElement.innerHTML = `
+          <div class="tool-header">
+            <div class="tool-name">${tool.name}</div>
+            <div class="tool-category">${tool.category}</div>
+          </div>
+          <div class="tool-usp">${tool.usp}</div>
+          <div class="tool-relevance">
+            Match: 
+            <div class="relevance-bar">
+              <div class="relevance-fill" style="width: ${relevancePercent}%"></div>
+            </div>
+          </div>
+        `;
+        
+        // Add click handler to open official website
+        toolElement.addEventListener('click', () => {
+          window.open(tool.url, '_blank');
+        });
+        
+        resultsContainer.appendChild(toolElement);
+      });
+    }
+
+    // Allow search on Enter key
+    document.getElementById('mainSearchInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        searchTools();
+      }
+    });
+  </script>
+</body>
+</html>
